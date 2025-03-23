@@ -12,6 +12,23 @@ const RepositoryAnalyzer = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const processWithOpenAI = async (recommendations: string[]) => {
+    try {
+      const response = await fetch('/api/process-recommendation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recommendations }),
+      });
+      const result = await response.json();
+      return result.processedRecommendations;
+    } catch (error) {
+      console.error('Error processing with OpenAI:', error);
+      return recommendations; // Fallback to original recommendations
+    }
+  };
+
   const handleAnalyze = async () => {
     if (!repoUrl.trim()) return;
 
@@ -22,8 +39,15 @@ const RepositoryAnalyzer = () => {
       console.log('Fetching details for:', repoUrl);
       const data = await fetchDetails(repoUrl);
       
-      // Navigate to dashboard with the response data
-      router.push(`/dashboard?data=${encodeURIComponent(JSON.stringify(data))}`);
+      // Process recommendations with OpenAI
+      const processedRecommendations = await processWithOpenAI(data.recommendations);
+      const enrichedData = {
+        ...data,
+        processedRecommendations
+      };
+      
+      // Navigate to dashboard with the processed data
+      router.push(`/dashboard?data=${encodeURIComponent(JSON.stringify(enrichedData))}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An unexpected error occurred' as any);
     } finally {

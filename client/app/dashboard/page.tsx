@@ -123,7 +123,35 @@ function DashboardContent() {
   // State to track file analysis status
   const [fileAnalyses, setFileAnalyses] = useState<Record<string, FileAnalysis>>({});
   const [isAnalyzing, setIsAnalyzing] = useState<Record<string, boolean>>({});
-  
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [recommendations, setRecommendations] = useState<string>('');
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
+
+  const fetchRecommendations = async () => {
+    setIsLoadingRecommendations(true);
+    try {
+      const response = await fetch('/api/process-recommendation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recommendations: `Please analyze this issue and provide recommendations:
+            Repository: ${data.repo}
+            Description: ${data.description}
+            Files affected: ${data.filename_matches?.map(m => m.file_name).join(', ')}`
+        }),
+      });
+      
+      const result = await response.json();
+      setRecommendations(result.processedRecommendations);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    } finally {
+      setIsLoadingRecommendations(false);
+    }
+  };
+
   // Function to check if we should regenerate analyses (e.g., on refresh or first load)
   // This checks if the analyses were already generated and stored in localStorage
   const shouldRegenerateAnalyses = () => {
@@ -434,6 +462,47 @@ function DashboardContent() {
               </div>
             </div>
           </div>
+          {/* Add this button after the Issue Details section */}
+          <button
+            onClick={() => {
+              setShowRecommendations(true);
+              fetchRecommendations();
+            }}
+            className="mb-6 bg-[#075707] hover:bg-[#0a6b0a] text-white font-bold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <span>See Recommendations</span>
+          </button>
+
+          {/* Add the recommendations popup */}
+          {showRecommendations && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-[#0a0a0a] rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative border border-[#075707]">
+                <button
+                  onClick={() => setShowRecommendations(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                
+                <h2 className="text-2xl font-bold text-[#075707] mb-4 pr-8">Recommendations</h2>
+                
+                {isLoadingRecommendations ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#075707]"></div>
+                  </div>
+                ) : (
+                  <div className="text-gray-300 whitespace-pre-wrap">
+                    {recommendations || 'No recommendations available.'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {/* Matched Files List */}
           <div>
             <h2 className="text-2xl font-bold text-[#075707] font-noto mb-6 flex items-center">
