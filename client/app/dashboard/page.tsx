@@ -479,7 +479,7 @@ function DashboardContent() {
           {/* Add the recommendations popup */}
           {showRecommendations && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-[#0a0a0a] rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative border border-[#075707]">
+              <div classNa              git pull origin mainme="bg-[#0a0a0a] rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative border border-[#075707]">
                 <button
                   onClick={() => setShowRecommendations(false)}
                   className="absolute top-4 right-4 text-gray-400 hover:text-white"
